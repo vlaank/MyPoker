@@ -1,0 +1,212 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{B5C69C52-9BAD-4F18-A3D2-9003A1F4139A}</ProjectGuid>
+    <OutputType>WinExe</OutputType>
+    <RootNamespace>View</RootNamespace>
+    <AssemblyName>View</AssemblyName>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <ProjectTypeGuids>{60dc8134-eba5-43b8-bcc9-bb4bc16c2548};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+    <WarningLevel>4</WarningLevel>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="DynamicData, Version=6.7.1.2534, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\DynamicData.6.7.1.2534\lib\net46\DynamicData.dll</HintPath>
+    </Reference>
+    <Reference Include="ReactiveUI, Version=9.10.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\ReactiveUI.9.10.7\lib\net461\ReactiveUI.dll</HintPath>
+    </Reference>
+    <Reference Include="ReactiveUI.WPF, Version=9.10.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\ReactiveUI.WPF.9.10.7\lib\net461\ReactiveUI.WPF.dll</HintPath>
+    </Reference>
+    <Reference Include="Splat, Version=6.1.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Splat.6.1.7\lib\net461\Splat.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Drawing.Primitives, Version=4.0.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Drawing.Primitives.4.3.0\lib\net45\System.Drawing.Primitives.dll</HintPath>
+      <Private>True</Private>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Reactive, Version=4.0.0.0, Culture=neutral, PublicKeyToken=94bc3704cddfc263, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Reactive.4.0.0\lib\net46\System.Reactive.dll</HintPath>
+    </Reference>
+    <Reference Include="System.ValueTuple, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.ValueTuple.4.5.0\lib\net47\System.ValueTuple.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Windows" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Xaml">
+      <RequiredTargetFramework>4.0</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="WindowsBase" />
+    <Reference Include="PresentationCore" />
+    <Reference Include="PresentationFramework" />
+  </ItemGroup>
+  <ItemGroup>
+    <ApplicationDefinition Include="App.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </ApplicationDefinition>
+    <Compile Include="Table.cs" />
+    <Page Include="MainWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Compile Include="App.xaml.cs">
+      <DependentUpon>App.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MainWindow.xaml.cs">
+      <DependentUpon>MainWindow.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Properties\AssemblyInfo.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+    <Compile Include="Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+    </Compile>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <None Include="packages.config" />
+    <None Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="References\Images\b1fh.bmp" />
+    <Resource Include="References\Images\b1fv.bmp" />
+    <Resource Include="References\Images\b1pb.bmp" />
+    <Resource Include="References\Images\b1pl.bmp" />
+    <Resource Include="References\Images\b1pr.bmp" />
+    <Resource Include="References\Images\b1pt.bmp" />
+    <Resource Include="References\Images\b2fh.bmp" />
+    <Resource Include="References\Images\b2fv.bmp" />
+    <Resource Include="References\Images\b2pb.bmp" />
+    <Resource Include="References\Images\b2pl.bmp" />
+    <Resource Include="References\Images\b2pr.bmp" />
+    <Resource Include="References\Images\b2pt.bmp" />
+    <Resource Include="References\Images\back.bmp" />
+    <Resource Include="References\Images\blank.bmp" />
+    <Resource Include="References\Images\c02.bmp" />
+    <Resource Include="References\Images\c03.bmp" />
+    <Resource Include="References\Images\c04.bmp" />
+    <Resource Include="References\Images\c05.bmp" />
+    <Resource Include="References\Images\c06.bmp" />
+    <Resource Include="References\Images\c07.bmp" />
+    <Resource Include="References\Images\c08.bmp" />
+    <Resource Include="References\Images\c09.bmp" />
+    <Resource Include="References\Images\c10.bmp" />
+    <Resource Include="References\Images\c11.bmp" />
+    <Resource Include="References\Images\c12.bmp" />
+    <Resource Include="References\Images\c13.bmp" />
+    <Resource Include="References\Images\c14.bmp" />
+    <Resource Include="References\Images\d02.bmp" />
+    <Resource Include="References\Images\d03.bmp" />
+    <Resource Include="References\Images\d04.bmp" />
+    <Resource Include="References\Images\d05.bmp" />
+    <Resource Include="References\Images\d06.bmp" />
+    <Resource Include="References\Images\d07.bmp" />
+    <Resource Include="References\Images\d08.bmp" />
+    <Resource Include="References\Images\d09.bmp" />
+    <Resource Include="References\Images\d10.bmp" />
+    <Resource Include="References\Images\d11.bmp" />
+    <Resource Include="References\Images\d12.bmp" />
+    <Resource Include="References\Images\d13.bmp" />
+    <Resource Include="References\Images\d14.bmp" />
+    <Resource Include="References\Images\h02.bmp" />
+    <Resource Include="References\Images\h03.bmp" />
+    <Resource Include="References\Images\h04.bmp" />
+    <Resource Include="References\Images\h05.bmp" />
+    <Resource Include="References\Images\h06.bmp" />
+    <Resource Include="References\Images\h07.bmp" />
+    <Resource Include="References\Images\h08.bmp" />
+    <Resource Include="References\Images\h09.bmp" />
+    <Resource Include="References\Images\h10.bmp" />
+    <Resource Include="References\Images\h11.bmp" />
+    <Resource Include="References\Images\h12.bmp" />
+    <Resource Include="References\Images\h13.bmp" />
+    <Resource Include="References\Images\h14.bmp" />
+    <Resource Include="References\Images\s02.bmp" />
+    <Resource Include="References\Images\s03.bmp" />
+    <Resource Include="References\Images\s04.bmp" />
+    <Resource Include="References\Images\s05.bmp" />
+    <Resource Include="References\Images\s06.bmp" />
+    <Resource Include="References\Images\s07.bmp" />
+    <Resource Include="References\Images\s08.bmp" />
+    <Resource Include="References\Images\s09.bmp" />
+    <Resource Include="References\Images\s10.bmp" />
+    <Resource Include="References\Images\s11.bmp" />
+    <Resource Include="References\Images\s12.bmp" />
+    <Resource Include="References\Images\s13.bmp" />
+    <Resource Include="References\Images\s14.bmp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\MyPoker\MyPoker.csproj">
+      <Project>{8865ceb8-6cb1-472c-85c0-fd9f57651d9f}</Project>
+      <Name>MyPoker</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="References\Images\table.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="References\Images\ppt1.jpg" />
+    <Resource Include="References\Images\ppt2.jpg" />
+    <Resource Include="References\Images\ppt3.jpg" />
+    <Resource Include="References\Images\ppt4.jpg" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="References\Images\poker_PNG3.png" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>
