@@ -13,6 +13,7 @@ namespace MyPoker
 {
     public class Table : ITable
     {
+        private readonly Card?[] deck = new Card?[52];
         public ObservableCollection<Card> Cards { get; private set; }
 
         public ObservableCollection<IPlayer> Players { get; private set; }
@@ -20,6 +21,8 @@ namespace MyPoker
         public ObservableCollection<Enumerations.PlayerTurns> PlayerTurns { get; private set; }
 
         public ObservableCollection<ulong> PlayerBets { get; private set; }
+
+        public ObservableCollection<bool> Winner { get; private set; }
 
         private bool isPlayerTurn;
         public bool IsPlayerTurn
@@ -62,6 +65,7 @@ namespace MyPoker
         public Table()
         {
             Cards = new ObservableCollection<Card>();
+            Winner = new ObservableCollection<bool>();
             Players = new ObservableCollection<IPlayer>();
             PlayerTurns = new ObservableCollection<Enumerations.PlayerTurns>();
             PlayerBets = new ObservableCollection<ulong>();
@@ -93,7 +97,6 @@ namespace MyPoker
                 await Task.Run(
                     () => 
                     {
-                        ((RealPlayer)Players[0]).Fold();
                         PlayerTurns[0] = Enumerations.PlayerTurns.Fold;
                         IsPlayerTurn = false;
                     }),
@@ -117,76 +120,137 @@ namespace MyPoker
                     }),
                 canExecute);
         }
+
         public void GameProcess()
         {
-            Cards.Clear();
-            Players.Clear();
-            PlayerTurns.Clear();
-            PlayerBets.Clear();
-            Round = 0;
-            Bank = 0UL;
+            IsGameOn = false;
+            Task.Delay(1000).Wait();
+            AddPlayers();
+            ResetGame();
+            Task.Delay(1000).Wait();
 
-            for(int i =0; i < 4; i++)
-            {
-                PlayerBets.Add(0UL);
-                PlayerTurns.Add(Enumerations.PlayerTurns.Wait);
-            }
             IsGameOn = true;
-            //AddPlayers();
-
-            //await Task.Run(() =>
-            //{
             while (isGameOn)
             {
-                Round = 0;
-                Bank = 0UL;
-                Cards.Clear();
-                ResetPlayerTurns();
-                AddPlayers();
-                while (Round != Enumerations.Rounds.End)
+                Task.Delay(1000).Wait();
+                ResetGame();
+                Task.Delay(2000).Wait();
+                for (int i = 0; i < 4; i++)
                 {
-                    PlayersBet();
+                    for (int j = 0; j < 2; j++)
+                    {
+                        Players[i].Hand[j] = TakeCard();
+                        Task.Delay(500).Wait();
+                    }
+                }
+                while (isGameOn && Round != Enumerations.Rounds.End)
+                {
+                    while (PlayerTurns.Where(Turn => Turn == Enumerations.PlayerTurns.Wait).Count() != 0 || PlayerTurns.Where(Turn => Turn == Enumerations.PlayerTurns.Raise).Count() > 1)
+                        PlayersBet();
                     Task.Delay(1000).Wait();
-                    ResetPlayerTurns();
+                    if (PlayerTurns.Where(turn => turn == Enumerations.PlayerTurns.Fold).Count() >= 3) break;
+                    ResetPlayerTurns(Round + 1);
                     AddCards();
                     Round++;
                 }
+                GetWinner();
+                Task.Delay(1000).Wait();
             }
-            // });
         }
 
+        private void GetWinner()
+        {
+            if(Cards.Count < 5 )
+            {
+                if(PlayerTurns.Where(t => t == Enumerations.PlayerTurns.Fold).Count() != 4)
+                    Winner[PlayerTurns.Select((t, i) => (t, i)).Where(x => x.ToTuple().Item1 != Enumerations.PlayerTurns.Fold).First().ToTuple().Item2] = true;
+                return;
+            }
+            var PotentialWinners = Players
+                .Select((player, i) => (new HandEvaluator(Cards, player.Hand).EvaluateHand(), i))
+                .Where(t => PlayerTurns[t.ToTuple().Item2] != Enumerations.PlayerTurns.Fold)
+                .OrderByDescending(t => t.Item1)
+                .GroupBy(t => t.Item1)
+                .First().Select(x=>x.ToTuple().Item2);
+
+
+            (Enumerations.Ranks, Enumerations.Ranks) TMax = (Enumerations.Ranks.Two, Enumerations.Ranks.Two);
+            int winner_i = 0;
+            foreach (int i in PotentialWinners)
+            {
+                var T = Players[i].Hand[0].Rank > Players[i].Hand[1].Rank ?
+                    (Players[i].Hand[0].Rank, Players[i].Hand[1].Rank) :
+                    (Players[i].Hand[1].Rank, Players[i].Hand[0].Rank);
+                    
+                if(T.Item1 > TMax.Item1)
+                {
+                    TMax = T;
+                    winner_i = i;
+                }
+                else if(T.Item1 == TMax.Item1)
+                {
+                    if(T.Item2 >= TMax.Item2)
+                    {
+                        TMax.Item2 = T.Item2;
+                        winner_i = i;
+                    }
+                }
+            }
+            Winner[winner_i] = true;
+        }
+
+        private void FillDeck()
+        {
+            int k = 0;
+            for (int i = 2; i < 15; i++)
+            {
+                for (int j = 0; j < 4; j++)
+                {
+                    deck[k++] = new Card() { Suit = (Enumerations.Suits)j, Rank = (Enumerations.Ranks)i };
+                }
+            }
+        }
+
+        private void ResetGame()
+        {
+            Round = 0;
+            Bank = 0UL;
+            Cards.Clear();
+            ResetPlayerTurns(Round);
+            FillDeck();
+            for (int i = 0; i < 4; i++)
+            {
+                for (int j = 0; j < 2; j++)
+                {
+                    Players[i].Hand[j] = new Card();
+                }
+            }
+        }
         private void AddPlayers()
         {
             Players.Clear();
-            Task.Delay(500).Wait();
+            PlayerTurns.Clear();
+            PlayerBets.Clear();
 
-            Players.Add(new RealPlayer("Me", new ObservableCollection<Card>(new[] { new Card(), new Card() })
-                ,
-                    1_000));
-            Task.Delay(1000).Wait();
-
+            Players.Add(
+                new RealPlayer("Me", new ObservableCollection<Card>(new[] { new Card(), new Card() }),
+                1_000
+                ));
+            PlayerBets.Add(0UL);
+            PlayerTurns.Add(Enumerations.PlayerTurns.Wait);
+            Winner.Add(false);
 
             for (int i = 0; i < 3; i++)
             {
-                Players.Add(new Computer("Player", new ObservableCollection<Card>(new[] { new Card(), new Card() }),
-                    1_000));
-
-                Task.Delay(1000).Wait();
+                Players.Add(
+                    new Computer("Player", new ObservableCollection<Card>(new[] { new Card(), new Card() }),
+                    1_000
+                    ));
+                PlayerBets.Add(0UL);
+                PlayerTurns.Add(Enumerations.PlayerTurns.Wait);
+                Winner.Add(false);
             }
 
-            for(int i =0; i< 4;i++)
-            {
-                for(int j=0; j < 2; j++)
-                {
-                    Players[i].Hand[j] = new Card()
-                    {
-                        Rank = (Enumerations.Ranks)rand.Next(2, 14),
-                        Suit = (Enumerations.Suits)rand.Next(4)
-                    };
-                    Task.Delay(500).Wait();
-                }
-                    Task.Delay(500).Wait();
-            }
         }
 
         private void PlayersBet()
@@ -195,10 +259,11 @@ namespace MyPoker
             {
                 if(PlayerTurns[i] != Enumerations.PlayerTurns.Fold)
                 {
-                    if (Players[i] is RealPlayer realPlayer && realPlayer.Status)
-                        IsPlayerTurn = true;
-                    if (IsPlayerTurn)
+                    if (Players[i] is RealPlayer realPlayer)
+                         IsPlayerTurn = true;
+                     if (IsPlayerTurn)
                         while (IsPlayerTurn) ;
+                    //if (false) ;
                     else
                     {
                         PlayerBets[i] = Players[i].TakeTurn(100, Cards, out Enumerations.PlayerTurns playerTurn, Bank, PlayerBets);
@@ -209,14 +274,18 @@ namespace MyPoker
             }
         }
 
-        private void ResetPlayerTurns()
+        private void ResetPlayerTurns(Enumerations.Rounds Round)
         {
             for (int i = 0; i < Players.Count(); i++)
             {
-                //if(PlayerTurns[i] != Enumerations.PlayerTurns.Fold)
+                if(Round == Enumerations.Rounds.PreFlop)
+                    PlayerTurns[i] = Enumerations.PlayerTurns.Wait;
+                else if (PlayerTurns[i] != Enumerations.PlayerTurns.Fold)
                     PlayerTurns[i]= Enumerations.PlayerTurns.Wait;
+
                 Bank += PlayerBets[i];
                 PlayerBets[i] = 0UL;
+                Winner[i] = false;
             }   
         }
 
@@ -227,26 +296,33 @@ namespace MyPoker
                 case Enumerations.Rounds.PreFlop:
                     for (int i = 0; i < 3; i++)
                     {
-                        Cards.Add(new Card()
-                        {
-                            Rank = (Enumerations.Ranks)rand.Next(2, 14),
-                            Suit = (Enumerations.Suits)rand.Next(4)
-                        });
+                        Cards.Add(TakeCard());
                         Task.Delay(500).Wait();
                     }
                     break;
                 case Enumerations.Rounds.FLop:
                 case Enumerations.Rounds.Turn:
-                    Cards.Add(new Card()
-                    {
-                        Rank = (Enumerations.Ranks)rand.Next(2, 14),
-                        Suit = (Enumerations.Suits)rand.Next(4)
-                    });
+                    Cards.Add(TakeCard());
                     Task.Delay(500).Wait();
                     break;
                 default:
                     break;
             }
+        }
+
+        private Card TakeCard()
+        {
+            int k1, k2;
+            Card? DeletedCard;
+            do
+            {
+                k1 = rand.Next(0, 4);
+                k2 = rand.Next(0, 13);
+                DeletedCard = deck[k1 + 4 * k2];
+            } while (!DeletedCard.HasValue);
+
+            deck[k1 + 4 * k2] = null;
+            return DeletedCard.Value;
         }
 
         public event PropertyChangedEventHandler PropertyChanged;

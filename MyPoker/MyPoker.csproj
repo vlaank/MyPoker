@@ -73,6 +73,7 @@
     <Compile Include="Bot.cs" />
     <Compile Include="Converters.cs" />
     <Compile Include="Enumerations.cs" />
+    <Compile Include="HandEvaluator.cs" />
     <Compile Include="IPlayer.cs" />
     <Compile Include="ITable.cs" />
     <Compile Include="Program.cs" />

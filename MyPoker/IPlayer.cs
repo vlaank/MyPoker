@@ -14,7 +14,6 @@ namespace MyPoker
         string Name { get; }
         ObservableCollection<Card> Hand { get; }
         ulong Money { get; }
-        bool Status { get; }
         ulong TakeTurn(ulong currentRate, IEnumerable<Card> OpenCards, out Enumerations.PlayerTurns PlayerTurn, ulong Bank, IEnumerable<ulong> Bets);
     }
 }

@@ -47,9 +47,9 @@ namespace MyPoker
 
         public ulong TakeTurn(ulong currentRate, IEnumerable<Card> OpenCards, out Enumerations.PlayerTurns PlayerTurn,ulong Bank, IEnumerable<ulong> Bets)
         {
-            Money -= 100;
+            Money -= 2*currentRate;
             PlayerTurn = Enumerations.PlayerTurns.Call;
-            return 0;
+            return 2*currentRate;
             //throw new NotImplementedException();
         }
         public void Fold()
@@ -94,11 +94,8 @@ namespace MyPoker
 
         public ulong TakeTurn(ulong currentRate, IEnumerable<Card> OpenCards, out Enumerations.PlayerTurns PlayerTurn, ulong Bank, IEnumerable<ulong> Bets)
         {
-            Money -= 10;
-            //PlayerTurn = Enumerations.PlayerTurns.Call;
             ulong sum = 0;
-            foreach (var item in Bets)
-            {
+            foreach (var item in Bets){
                 sum += item;
             }
             var str = OpenCards.Count() == 0 ? "" : String.Join(" ", OpenCards.Select(s => s));
@@ -111,10 +108,17 @@ namespace MyPoker
                 10,
                 Bets.Count()
                 );
-            return 10UL;
-            //throw new NotImplementedException();
+            if(PlayerTurn == Enumerations.PlayerTurns.Call)
+            {
+                Money -= currentRate;
+                return currentRate;
+            }
+            else if(PlayerTurn == Enumerations.PlayerTurns.Raise)
+            {
+                Money -= 2 * currentRate;
+                return 2 * currentRate;
+            }
+            return 0UL;
         }
-        public void Fold()
-            => Status = false;
     }
 }

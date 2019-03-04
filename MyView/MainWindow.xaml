@@ -65,7 +65,10 @@
                 Visibility="{Binding PlayerBets[0],Converter={StaticResource BetConverter}}"
                 Content="{Binding PlayerBets[0], Converter={StaticResource MoneyConverter}}" Margin="210,32,-212,111" FontSize="14"
                 />
-
+            <Image
+                Visibility="{Binding Winner[0], Converter={StaticResource BooleanToVisibilityConverter}}"
+                Source="Resources/Images/winner.png" Margin="-132,-30,170,95"
+                />
 
         </Grid>
         <Grid Margin="24,233,910,268" 
@@ -103,7 +106,10 @@
                 Margin="200,40,-193,103" FontSize="14"
                 />
 
-
+            <Image
+                Visibility="{Binding Winner[1], Converter={StaticResource BooleanToVisibilityConverter}}"
+                Source="Resources/Images/winner.png" Margin="21,-123,16,188"
+                />
         </Grid>
         <Grid Margin="462,10,472,491" 
               Visibility="{Binding IsGameOn, Converter={StaticResource BooleanToVisibilityConverter}}"
@@ -139,7 +145,10 @@
                 Content="{Binding PlayerBets[2], Converter={StaticResource MoneyConverter}}" Margin="28,174,-36,-31" FontSize="14"
                 />
 
-
+            <Image
+                Visibility="{Binding Winner[2], Converter={StaticResource BooleanToVisibilityConverter}}"
+                Source="Resources/Images/winner.png" Margin="167,-18,-131,83"
+                />
         </Grid>
         <Grid Margin="892,233,42,268" 
               Visibility="{Binding IsGameOn, Converter={StaticResource BooleanToVisibilityConverter}}"
@@ -174,6 +183,10 @@
                 Visibility="{Binding PlayerBets[3], Converter={StaticResource BetConverter}}"
                 Content="{Binding PlayerBets[3], Converter={StaticResource MoneyConverter}}" Margin="-170,42,199,101" FontSize="14"
                 HorizontalAlignment="Right"
+                />
+            <Image
+                Visibility="{Binding Winner[3], Converter={StaticResource BooleanToVisibilityConverter}}"
+                Source="Resources/Images/winner.png" Margin="21,-128,16,193"
                 />
 
 
