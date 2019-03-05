@@ -45,4 +45,16 @@ namespace MyPoker
             throw new NotImplementedException();
         }
     }
+    public class RoundConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            return (Enumerations.Rounds)value != Enumerations.Rounds.End? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
 }

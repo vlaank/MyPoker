@@ -6,6 +6,7 @@ using System.Linq;
 using System.Reactive;
 using System.Reactive.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using ReactiveUI;
 
@@ -52,6 +53,39 @@ namespace MyPoker
             private set => this.RaiseAndSetIfChanged(ref isGameOn,value);
         }
 
+        public ObservableCollection<string> Logs { get; } = new ObservableCollection<string>();
+
+        private ulong smallBlind = 5;
+        private ulong bigBlind = 10;
+
+        private int BlindIndex;
+
+        private ulong curbet;
+        private ulong curBet
+        {
+            get => curbet;
+            set => this.RaiseAndSetIfChanged(ref curbet, value);
+        }
+
+        private ulong minRaise;
+        public ulong MinRaise
+        {
+            get => minRaise;
+            set => this.RaiseAndSetIfChanged(ref minRaise, value);
+        }
+        private ulong maxRaise;
+        public ulong MaxRaise
+        {
+            get => maxRaise;
+            set => this.RaiseAndSetIfChanged(ref maxRaise, value);
+        }
+        private ulong playerBet;
+        public ulong PlayerBet
+        {
+            get => playerBet;
+            set => this.RaiseAndSetIfChanged(ref playerBet, value);
+        }
+
         public ReactiveCommand<Unit, Unit> GameStartCommand { get; private set; }
         public ReactiveCommand<Unit, Unit> GameStopCommand { get; private set; }
 
@@ -60,6 +94,8 @@ namespace MyPoker
         public ReactiveCommand<Unit, Unit> RaiseCommand { get; private set; }
 
         public ReactiveCommand<Unit, Unit> FoldCommand { get; private set; }
+
+        SynchronizationContext uiContext;
 
         private Random rand = new Random();
         public Table()
@@ -70,6 +106,11 @@ namespace MyPoker
             PlayerTurns = new ObservableCollection<Enumerations.PlayerTurns>();
             PlayerBets = new ObservableCollection<ulong>();
             IsGameOn = false;
+
+            this.ObservableForProperty(t => t.curBet)
+                .Subscribe(_ => { PlayerBet = MinRaise = curBet == 0 ? 1 : Math.Min(2 * curBet, Players[0].Money); MaxRaise = Players.Count() > 0 ? Players[0].Money - PlayerBets[0] : 0UL;});
+
+            uiContext = SynchronizationContext.Current;
 
             GameStartCommand = ReactiveCommand.CreateFromTask(
                 async () => 
@@ -98,6 +139,7 @@ namespace MyPoker
                     () => 
                     {
                         PlayerTurns[0] = Enumerations.PlayerTurns.Fold;
+                        uiContext.Send(x => Logs.Add($"------- {Players[0].Name} - Folds  -------"), null);
                         IsPlayerTurn = false;
                     }),
                 canExecute);
@@ -106,7 +148,16 @@ namespace MyPoker
                 await Task.Run(
                     () =>
                     {
-                        PlayerTurns[0] = Enumerations.PlayerTurns.Call;
+                        if (curBet - PlayerBets[0] != 0)
+                        {
+                            PlayerTurns[0] = Enumerations.PlayerTurns.Call;
+                            Players[0].Blind(curBet - PlayerBets[0]);
+                            PlayerBets[0] += curBet - PlayerBets[0];
+                        }
+                        else PlayerTurns[0] = Enumerations.PlayerTurns.Check;
+
+                        uiContext.Send(x => Logs.Add($"------- {Players[0].Name} - {PlayerTurns[0]}s  : {curBet}$ -------"), null);
+
                         IsPlayerTurn = false;
                     }),
                 canExecute);
@@ -116,6 +167,10 @@ namespace MyPoker
                     () =>
                     {
                         PlayerTurns[0] = Enumerations.PlayerTurns.Raise;
+                        curBet = PlayerBet;
+                        Players[0].Blind(curBet - PlayerBets[0]);
+                        PlayerBets[0] += curBet - PlayerBets[0];
+                        uiContext.Send(x => Logs.Add($"------- {Players[0].Name} - Raises : {curBet}$ -------"), null);
                         IsPlayerTurn = false;
                     }),
                 canExecute);
@@ -123,8 +178,9 @@ namespace MyPoker
 
         public void GameProcess()
         {
+            int game = 1;
             IsGameOn = false;
-            Task.Delay(1000).Wait();
+            uiContext.Send(x => Logs.Clear(), null);
             AddPlayers();
             ResetGame();
             Task.Delay(1000).Wait();
@@ -132,50 +188,80 @@ namespace MyPoker
             IsGameOn = true;
             while (isGameOn)
             {
+                uiContext.Send(x=> Logs.Add($"======= Game {game++} ======="), null);
                 Task.Delay(1000).Wait();
                 ResetGame();
                 Task.Delay(2000).Wait();
                 for (int i = 0; i < 4; i++)
                 {
+                    if (Players.Sum(p => p.IsGaming ? 1 : 0) == 1)
+                    {
+                        var Winner = Players.Where(player => player.IsGaming).First();
+                        uiContext.Send(x => Logs.Add($"======= {Winner.Name} is WINNING! TOTAL : {Winner.Money}$ ======="), null);
+                        isGameOn = false; break;
+                    }
                     for (int j = 0; j < 2; j++)
                     {
                         Players[i].Hand[j] = TakeCard();
-                        Task.Delay(500).Wait();
+                        if (i == 0) Task.Delay(500).Wait();
                     }
                 }
                 while (isGameOn && Round != Enumerations.Rounds.End)
                 {
-                    while (PlayerTurns.Where(Turn => Turn == Enumerations.PlayerTurns.Wait).Count() != 0 || PlayerTurns.Where(Turn => Turn == Enumerations.PlayerTurns.Raise).Count() > 1)
-                        PlayersBet();
+                    uiContext.Send(x=> Logs.Add($"####### {Round} #######"), null);
+                    PlayersBet();
                     Task.Delay(1000).Wait();
-                    if (PlayerTurns.Where(turn => turn == Enumerations.PlayerTurns.Fold).Count() >= 3) break;
+                    if (PlayerTurns.Sum(turn => turn != Enumerations.PlayerTurns.Fold ? 1 : 0) == 1) break;
                     ResetPlayerTurns(Round + 1);
                     AddCards();
                     Round++;
                 }
                 GetWinner();
-                Task.Delay(1000).Wait();
             }
         }
 
         private void GetWinner()
         {
-            if(Cards.Count < 5 )
+            if (!IsGameOn) return;
+            Round = Enumerations.Rounds.End;
+            int winner_i = 0;
+
+            for (int i = 0; i < Players.Count(); i++)
             {
-                if(PlayerTurns.Where(t => t == Enumerations.PlayerTurns.Fold).Count() != 4)
-                    Winner[PlayerTurns.Select((t, i) => (t, i)).Where(x => x.ToTuple().Item1 != Enumerations.PlayerTurns.Fold).First().ToTuple().Item2] = true;
+                Bank += PlayerBets[i];
+                PlayerBets[i] = 0UL;
+            }
+            Task.Delay(1000).Wait();
+            if(Round != Enumerations.Rounds.End || Cards.Count < 5)
+            {
+                if(PlayerTurns.Sum(t => t == Enumerations.PlayerTurns.Fold ? 1 : 0) != 4)
+                {
+                    for(int i =0; i <4; i++)
+                        if (PlayerTurns[i]!= Enumerations.PlayerTurns.Fold)
+                        {
+                            winner_i = i;break;
+                        }
+                    //winner_i = PlayerTurns.Select((t, i) => (t, i)).Where(x => x.ToTuple().Item1 != Enumerations.PlayerTurns.Fold).First().ToTuple().Item2;
+                    Winner[winner_i] = true;
+                    uiContext.Send(x => Logs.Add($"------- {Players[winner_i].Name} - Wins   : {Bank}$ -------"), null);
+
+                    Task.Delay(3000).Wait();
+                    Players[winner_i].TakeMoney(Bank);
+                    Bank = 0Ul;
+
+                }
                 return;
             }
-            var PotentialWinners = Players
+            var WinnersCombination = Players
                 .Select((player, i) => (new HandEvaluator(Cards, player.Hand).EvaluateHand(), i))
                 .Where(t => PlayerTurns[t.ToTuple().Item2] != Enumerations.PlayerTurns.Fold)
                 .OrderByDescending(t => t.Item1)
                 .GroupBy(t => t.Item1)
-                .First().Select(x=>x.ToTuple().Item2);
+                .First();
+             var PotentialWinners = WinnersCombination.Select(x=>x.ToTuple().Item2);
 
 
             (Enumerations.Ranks, Enumerations.Ranks) TMax = (Enumerations.Ranks.Two, Enumerations.Ranks.Two);
-            int winner_i = 0;
             foreach (int i in PotentialWinners)
             {
                 var T = Players[i].Hand[0].Rank > Players[i].Hand[1].Rank ?
@@ -196,7 +282,13 @@ namespace MyPoker
                     }
                 }
             }
+            var comb = PotentialWinners.Count() == 1 ? WinnersCombination.First().ToTuple().Item1.combination.ToString() : TMax.ToString();
             Winner[winner_i] = true;
+            uiContext.Send(x => Logs.Add($"------- {Players[winner_i].Name} - Wins   : {Bank}$ -------"), null);
+            uiContext.Send(x => Logs.Add($"------- With {comb}-------"), null);
+            Task.Delay(3000).Wait();
+            Players[winner_i].TakeMoney(Bank);
+            Bank = 0Ul;
         }
 
         private void FillDeck()
@@ -214,18 +306,31 @@ namespace MyPoker
         private void ResetGame()
         {
             Round = 0;
-            Bank = 0UL;
+            Bank = curBet = 0UL;
+            MinRaise = MaxRaise = PlayerBet = 0UL;
+            BlindIndex = rand.Next(0, 3);
             Cards.Clear();
             ResetPlayerTurns(Round);
             FillDeck();
             for (int i = 0; i < 4; i++)
             {
-                for (int j = 0; j < 2; j++)
+                if (Players[i].IsGaming)
                 {
-                    Players[i].Hand[j] = new Card();
+                    if (Players[i].Money < bigBlind)
+                    {
+                        Players[i].IsGaming = false;
+                        PlayerTurns[i] = Enumerations.PlayerTurns.Fold;
+                        uiContext.Send(x => Logs.Add($"------- {Players[i].Name} - Stands Up -------"), null);
+                    }
+                    else
+                        for (int j = 0; j < 2; j++)
+                        {
+                            Players[i].Hand[j] = new Card();
+                        }
                 }
             }
         }
+
         private void AddPlayers()
         {
             Players.Clear();
@@ -234,7 +339,7 @@ namespace MyPoker
 
             Players.Add(
                 new RealPlayer("Me", new ObservableCollection<Card>(new[] { new Card(), new Card() }),
-                1_000
+                50
                 ));
             PlayerBets.Add(0UL);
             PlayerTurns.Add(Enumerations.PlayerTurns.Wait);
@@ -243,8 +348,8 @@ namespace MyPoker
             for (int i = 0; i < 3; i++)
             {
                 Players.Add(
-                    new Computer("Player", new ObservableCollection<Card>(new[] { new Card(), new Card() }),
-                    1_000
+                    new Computer($"Computer{i+1}", new ObservableCollection<Card>(new[] { new Card(), new Card() }),
+                    50
                     ));
                 PlayerBets.Add(0UL);
                 PlayerTurns.Add(Enumerations.PlayerTurns.Wait);
@@ -255,22 +360,110 @@ namespace MyPoker
 
         private void PlayersBet()
         {
-            for (int i = 0; i < Players.Count();i++)
+            int numOfPlayers = Players.Sum(player => player.IsGaming ? 1 : 0);
+            var active = PlayerTurns.Select((t, k) => t != Enumerations.PlayerTurns.Fold ? k : -1).Where(s => s >= 0);
+            IEnumerable<int> ActivePlayers = Players.Select((x,j) => active.Contains(j) ? j : -1).Where(s => s >=0);
+            curBet = 0UL;
+            if(Round == Enumerations.Rounds.PreFlop)
             {
-                if(PlayerTurns[i] != Enumerations.PlayerTurns.Fold)
+                ActivePlayers = Players.Select((t, j) => Players.Where(p => p.IsGaming).Contains(t) ? j : -1).Where(j => j >= 0);
+                if (ActivePlayers.Count() < 2) return;
+                int k = 0;
+                foreach (var item in ActivePlayers)
                 {
-                    if (Players[i] is RealPlayer realPlayer)
-                         IsPlayerTurn = true;
-                     if (IsPlayerTurn)
-                        while (IsPlayerTurn) ;
-                    //if (false) ;
-                    else
-                    {
-                        PlayerBets[i] = Players[i].TakeTurn(100, Cards, out Enumerations.PlayerTurns playerTurn, Bank, PlayerBets);
-                        PlayerTurns[i] = playerTurn;
-                    }
-                    Task.Delay(1000).Wait();
+                    if (item != BlindIndex)
+                        k++;
+                    else break;
                 }
+                var z = ActivePlayers.Skip(k);
+                ActivePlayers = z.Concat(ActivePlayers.Take(k));
+                int i = ActivePlayers.First();
+                Players[i].Blind(smallBlind);
+                PlayerBets[i] = smallBlind;
+                uiContext.Send(x => Logs.Add($"------- {Players[i].Name} - SmallBlind : {smallBlind}$ -------"), null);
+
+                Task.Delay(1500).Wait();
+
+                i = ActivePlayers.ElementAt(1);
+                Players[i].Blind(bigBlind);
+                PlayerBets[i] = bigBlind;
+                uiContext.Send(x => Logs.Add($"------- {Players[i].Name} - BigBlind   : {bigBlind}$ -------"), null);
+
+                curBet = bigBlind;
+                Task.Delay(1500).Wait();
+
+                foreach (int j in ActivePlayers.Skip(2))
+                {
+                    if (PlayerTurns.Sum(t => t == Enumerations.PlayerTurns.Fold ? 1 : 0) > ActivePlayers.Count() - 1)
+                        return;
+                    if (PlayerTurns[j] != Enumerations.PlayerTurns.Fold)
+                    {
+                        if (Players[j] is RealPlayer realPlayer)
+                            IsPlayerTurn = true;
+                        if (IsPlayerTurn)
+                            while (IsPlayerTurn) { if (!IsGameOn) { IsPlayerTurn = false; return; } }
+                        else
+                        {
+                            var Bet = Players[j].TakeTurn(curBet - PlayerBets[j], Cards, out Enumerations.PlayerTurns playerTurn, Bank, PlayerBets);
+                            PlayerTurns[j] = playerTurn;
+                            if (playerTurn != Enumerations.PlayerTurns.Fold)
+                            {
+                                if (playerTurn == Enumerations.PlayerTurns.Raise)
+                                    curBet = Bet;
+                                PlayerBets[j] += Bet;
+                                uiContext.Send(x => Logs.Add($"------- {Players[j].Name} - {PlayerTurns[j]}s : {curBet}$ -------"), null);
+                            }
+                            else
+                            {
+                                uiContext.Send(x => Logs.Add($"------- {Players[j].Name} - Folds  -------"), null);
+                                ActivePlayers = ActivePlayers.Where((t, jj) => jj != j);
+                            }
+                        }
+                        Task.Delay(1500).Wait();
+                    }
+                        
+                }
+            }
+            while (
+                PlayerTurns.Sum(t => t == Enumerations.PlayerTurns.Wait ? 1 : 0) > 0 || 
+                PlayerTurns.Sum(Turn => Turn == Enumerations.PlayerTurns.Raise ? 1 : 0) > 0
+                )
+            {
+                foreach (int i in ActivePlayers)
+                {
+                    if (PlayerTurns.Sum(t => t != Enumerations.PlayerTurns.Fold ? 1 : 0) ==1)
+                        return;
+                    if (PlayerTurns[i] == Enumerations.PlayerTurns.Raise && PlayerTurns.Sum(t => t == Enumerations.PlayerTurns.Raise ? 1 : 0) == 1)
+                        return;
+                    if (PlayerTurns.Sum(t => t == Enumerations.PlayerTurns.Call || t == Enumerations.PlayerTurns.Check ? 1 : 0) == ActivePlayers.Count())
+                        return;
+                    if (PlayerTurns[i] != Enumerations.PlayerTurns.Fold)
+                    {
+                        if (Players[i] is RealPlayer realPlayer)
+                            IsPlayerTurn = true;
+                        if (IsPlayerTurn)
+                            while (IsPlayerTurn) { if (!IsGameOn) { IsPlayerTurn = false; return; } }
+                        else
+                        {
+                            var Bet = Players[i].TakeTurn(curBet - PlayerBets[i], Cards, out Enumerations.PlayerTurns playerTurn, Bank, PlayerBets);
+                            PlayerTurns[i] = playerTurn;
+                            if (playerTurn != Enumerations.PlayerTurns.Fold)
+                            {
+                                if (playerTurn == Enumerations.PlayerTurns.Raise)
+                                    curBet = Bet;
+                                PlayerBets[i] += Bet;
+                                uiContext.Send(x => Logs.Add($"------- {Players[i].Name} - {PlayerTurns[i]}s : {curBet}$ -------"), null);
+                            }
+                            else
+                            {
+                                uiContext.Send(x => Logs.Add($"------- {Players[i].Name} - Folds  -------"), null);
+                                ActivePlayers = ActivePlayers.Where((t, k) => k != i);
+                            }
+                        }
+                        Task.Delay(1500).Wait();
+                    }
+                }
+
             }
         }
 
@@ -278,9 +471,9 @@ namespace MyPoker
         {
             for (int i = 0; i < Players.Count(); i++)
             {
-                if(Round == Enumerations.Rounds.PreFlop)
+                if(Players[i].IsGaming && Round == Enumerations.Rounds.PreFlop)
                     PlayerTurns[i] = Enumerations.PlayerTurns.Wait;
-                else if (PlayerTurns[i] != Enumerations.PlayerTurns.Fold)
+                else if (Players[i].IsGaming && PlayerTurns[i] != Enumerations.PlayerTurns.Fold)
                     PlayerTurns[i]= Enumerations.PlayerTurns.Wait;
 
                 Bank += PlayerBets[i];

@@ -19,6 +19,12 @@ namespace MyPoker
                 name = value;
             }
         }
+        private bool isGaming = true;
+        public bool IsGaming
+        {
+            get => isGaming;
+            set => this.RaiseAndSetIfChanged(ref isGaming, value);
+        }
         private ObservableCollection<Card> hand = new ObservableCollection<Card>(new List<Card>(2));
         public ObservableCollection<Card> Hand
         {
@@ -36,24 +42,27 @@ namespace MyPoker
             private set => this.RaiseAndSetIfChanged(ref money, value);
         }
 
-        private bool status = true;
-        public bool Status
-        {
-            get => status;
-            private set => this.RaiseAndSetIfChanged(ref status, value);
-        }
         public RealPlayer(string _name, ObservableCollection<Card> _hand, ulong _money) =>
             (Name, hand, Money) = (_name, _hand, _money);
 
         public ulong TakeTurn(ulong currentRate, IEnumerable<Card> OpenCards, out Enumerations.PlayerTurns PlayerTurn,ulong Bank, IEnumerable<ulong> Bets)
         {
-            Money -= 2*currentRate;
-            PlayerTurn = Enumerations.PlayerTurns.Call;
-            return 2*currentRate;
-            //throw new NotImplementedException();
+            PlayerTurn = Enumerations.PlayerTurns.Wait;
+            return 0UL;
         }
-        public void Fold()
-            => Status = false;
+        public bool Blind(ulong blind)
+        {
+            if (Money < blind)
+                return false;
+
+            Money -= blind;
+            return true;
+        }
+        public void TakeMoney(ulong bank)
+        {
+            Money += bank;
+            this.RaisePropertyChanged("money");
+        }
     }
     public class Computer: ReactiveObject, IPlayer
     {
@@ -66,6 +75,13 @@ namespace MyPoker
                 name = value;
             }
         }
+        private bool isGaming = true;
+        public bool IsGaming
+        {
+            get => isGaming;
+            set => this.RaiseAndSetIfChanged(ref isGaming, value);
+        }
+
         private ObservableCollection<Card> hand;
         public ObservableCollection<Card> Hand
         {
@@ -83,17 +99,16 @@ namespace MyPoker
             private set => this.RaiseAndSetIfChanged(ref money, value);
         }
 
-        private bool status = true;
-        public bool Status
-        {
-            get => status;
-            private set => this.RaiseAndSetIfChanged(ref status, value);
-        }
         public Computer(string _name, ObservableCollection<Card> _hand, ulong _money) =>
             (Name, hand, Money) = (_name, _hand, _money);
 
         public ulong TakeTurn(ulong currentRate, IEnumerable<Card> OpenCards, out Enumerations.PlayerTurns PlayerTurn, ulong Bank, IEnumerable<ulong> Bets)
         {
+            if (Money < currentRate)
+            {
+                PlayerTurn = Enumerations.PlayerTurns.Fold;
+                return 0UL;
+            }
             ulong sum = 0;
             foreach (var item in Bets){
                 sum += item;
@@ -104,8 +119,8 @@ namespace MyPoker
                 String.Join(" ", Hand[0], Hand[1]),
                 str,
                 Bank + sum,
-                10,
-                10,
+                Convert.ToInt32(currentRate),
+                Convert.ToInt32(2 * currentRate),
                 Bets.Count()
                 );
             if(PlayerTurn == Enumerations.PlayerTurns.Call)
@@ -115,10 +130,27 @@ namespace MyPoker
             }
             else if(PlayerTurn == Enumerations.PlayerTurns.Raise)
             {
-                Money -= 2 * currentRate;
-                return 2 * currentRate;
+                if(Money < 2 * currentRate)
+                {
+                    currentRate = Money;
+                }
+                else currentRate *= 2;
+                Money -= currentRate;
+                return currentRate;
             }
             return 0UL;
+        }
+        public bool Blind(ulong blind)
+        {
+            if (Money < blind)
+                return false;
+
+            Money -= blind;
+            return true;
+        }
+        public void TakeMoney(ulong bank)
+        {
+            Money += bank;
         }
     }
 }

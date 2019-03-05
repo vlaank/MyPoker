@@ -14,8 +14,13 @@ namespace MyPoker
 
         bool IsPlayerTurn { get; }
         bool IsGameOn { get; }
+        ulong MinRaise { get; }
+        ulong MaxRaise { get; }
+        ulong PlayerBet { get; }
         Enumerations.Rounds Round { get; }
         ulong Bank { get; }
+
+        ObservableCollection<string> Logs { get; }
 
         ReactiveCommand<Unit, Unit> GameStartCommand { get; }
         ReactiveCommand<Unit, Unit> GameStopCommand { get; }

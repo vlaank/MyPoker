@@ -3,240 +3,303 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
         xmlns:local="clr-namespace:MyView"
         xmlns:converters="clr-namespace:MyPoker;assembly=MyPoker"
         mc:Ignorable="d"
-        Title="MainWindow" Height="714" Width="1108" ResizeMode="NoResize" WindowStartupLocation="CenterScreen">
+        Title="HoldemPoker" Height="714" Width="1408" ResizeMode="NoResize" WindowStartupLocation="CenterScreen">
     <Window.Resources>
         <converters:MoneyConverter x:Key="MoneyConverter"/>
         <converters:TurnConverter x:Key="TurnConverter"/>
         <converters:BetConverter x:Key="BetConverter"/>
+        <converters:RoundConverter x:Key="RoundConverter"/>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
     </Window.Resources>
-    
+
     <Grid>
-        
-        <Image
+
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="300"/>
+            <ColumnDefinition Width="1080"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <StackPanel Grid.Column="0">
+            <Label Content="Game Logs" HorizontalAlignment="Center"/>
+            <ListBox
+                x:Name="listBox"
+                Height="660"
+                Width="300"
+                HorizontalAlignment="Center"
+                ItemsSource="{Binding Logs}"
+                local:ListBoxBehavior.ScrollOnNewItem="True"
+                />
+        </StackPanel>
+        <Grid Grid.Column="1">
+
+            <Image
             Name="ManeBackground"
             Source="Resources/Images/table.png" Margin="0,10,0,-10"
             />
-        <Menu HorizontalAlignment="Left" VerticalAlignment="Top" Width="1100">
-            <MenuItem Header="Game">
-                <MenuItem Header="Start Game" HorizontalAlignment="Left" Width="140"
+            <Menu HorizontalAlignment="Left" VerticalAlignment="Top" Width="1108">
+                <MenuItem Header="Game">
+                    <MenuItem Header="New Game" HorizontalAlignment="Left" Width="160"
                           Command="{Binding GameStartCommand}"/>
-                <MenuItem Header="Stop Game" HorizontalAlignment="Left" Width="140"
+                    <MenuItem Header="Stop" HorizontalAlignment="Left" Width="160"
                           Command="{Binding GameStopCommand}"/>
-                <Separator HorizontalAlignment="Left" Width="140"/>
-                <MenuItem Header="Exit..." HorizontalAlignment="Left" Width="140"
-                          />
-            </MenuItem>
-        </Menu>
-        <Grid Margin="462,470,472,31" 
+                    <Separator HorizontalAlignment="Left" Width="160"/>
+                    <MenuItem Header="Exit..." HorizontalAlignment="Left" Width="160" Click="MenuItem_Click"/>
+                </MenuItem>
+            </Menu>
+            <Grid Margin="462,470,472,31" 
               Visibility="{Binding IsGameOn, Converter={StaticResource BooleanToVisibilityConverter}}"
               >
-            <Image Source="{Binding Players[0].Hand[0].Path}" Margin="28,-4,59,77" Stretch="Fill"
+                <Grid Visibility="{Binding Players[0].IsGaming, Converter={StaticResource BooleanToVisibilityConverter}}">
+
+                    <Image Source="{Binding Players[0].Hand[0].Path}" Margin="28,-4,59,77" Stretch="Fill"
                 
                 />
-            <Image Source="{Binding Players[0].Hand[1].Path}" Margin="70,-4,16,77" Stretch="Fill"
+                    <Image Source="{Binding Players[0].Hand[1].Path}" Margin="70,-4,16,77" Stretch="Fill"
                 
                 />
-            <Image
+                   
+                    <Image
                 Source="Resources/Images/ppt1.jpg" Margin="-27,88,-43,20" Stretch="Fill"
                 
                 />
-            <Image
+                    <Image
                 Source="{Binding PlayerTurns[0], Converter={StaticResource TurnConverter}}" Margin="156,106,-36,42" Stretch="Fill"
                 />
-            <Label
+                    <Label
                 HorizontalContentAlignment="Center" 
                 Content="{Binding Players[0].Name}" Margin="-7,94,6,32" Background="{x:Null}" Height="58" FontSize="14"
                 />
-            <Separator Margin="29,108,31,48" Opacity="0.8" Background="#FF424242" Foreground="{x:Null}"
+                    <Separator Margin="29,108,31,48" Opacity="0.8" Background="#FF424242" Foreground="{x:Null}"
                 />
-            <Label
+                    <Label
                 HorizontalContentAlignment="Center" FontSize="14"
                 Content="{Binding Players[0].Money, Converter={StaticResource MoneyConverter}}" Margin="-7,115,6,21" Background="{x:Null}"
                 />
-            <Image
+                    <Image
                 Visibility="{Binding PlayerBets[0],Converter={StaticResource BetConverter}}"
                 Source="Resources/Images/poker_PNG3.png" Margin="162,25,-59,106"
                 />
-            <Label
+                    <Label
                 Visibility="{Binding PlayerBets[0],Converter={StaticResource BetConverter}}"
                 Content="{Binding PlayerBets[0], Converter={StaticResource MoneyConverter}}" Margin="210,32,-212,111" FontSize="14"
                 />
-            <Image
+                    <Image
                 Visibility="{Binding Winner[0], Converter={StaticResource BooleanToVisibilityConverter}}"
                 Source="Resources/Images/winner.png" Margin="-132,-30,170,95"
                 />
+                </Grid>
 
-        </Grid>
-        <Grid Margin="24,233,910,268" 
+            </Grid>
+            <Grid Margin="24,233,910,268" 
               Visibility="{Binding IsGameOn, Converter={StaticResource BooleanToVisibilityConverter}}"
               >
-            <Image Source="{Binding Players[1].Hand[0].Path}" Margin="28,-4,59,77" Stretch="Fill"
+                <Grid Visibility="{Binding Players[1].IsGaming, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <Image Source="{Binding Players[1].Hand[0].Path}" Margin="28,-4,59,77" Stretch="Fill"
                 
                 />
-            <Image Source="{Binding Players[1].Hand[1].Path}" Margin="70,-4,16,77" Stretch="Fill"
+                    <Image Source="{Binding Players[1].Hand[1].Path}" Margin="70,-4,16,77" Stretch="Fill"
                 
                 />
-            <Image
+                    <Image Source="Resources\Images\b1fv.bmp" Visibility="{Binding Round, Converter={StaticResource RoundConverter}}" Margin="28,-4,59,77" Stretch="Fill"
+                
+                />
+                    <Image Source="Resources\Images\b1fv.bmp" Visibility="{Binding Round, Converter={StaticResource RoundConverter}}" Margin="70,-4,16,77" Stretch="Fill"
+                
+                />
+                    <Image
                 Source="Resources/Images/ppt2.jpg" Margin="-27,88,-43,20" Stretch="Fill"
                 />
-            <Image
+                    <Image
                 Source="{Binding PlayerTurns[1], Converter={StaticResource TurnConverter}}" Margin="156,106,-36,42" Stretch="Fill"
                 />
-            <Label
+                    <Label
                 HorizontalContentAlignment="Center" 
                 Content="{Binding Players[1].Name}" Margin="-7,94,6,32" Background="{x:Null}" Height="58" FontSize="14"
                 />
-            <Separator Margin="29,108,31,48" Opacity="0.8" Background="#FF424242" Foreground="{x:Null}"
+                    <Separator Margin="29,108,31,48" Opacity="0.8" Background="#FF424242" Foreground="{x:Null}"
                 />
-            <Label
+                    <Label
                 HorizontalContentAlignment="Center" FontSize="14"
                 Content="{Binding Players[1].Money, Converter={StaticResource MoneyConverter}}" Margin="-7,115,6,21" Background="{x:Null}"
                 />
-            <Image
+                    <Image
                 Visibility="{Binding PlayerBets[1], Converter={StaticResource BetConverter}}"
                 Source="Resources/Images/poker_PNG3.png" Margin="148,29,-46,103"
                 />
-            <Label
+                    <Label
                 Visibility="{Binding PlayerBets[1], Converter={StaticResource BetConverter}}"
                 Content="{Binding PlayerBets[1], Converter={StaticResource MoneyConverter}}"
                 Margin="200,40,-193,103" FontSize="14"
                 />
 
-            <Image
+                    <Image
                 Visibility="{Binding Winner[1], Converter={StaticResource BooleanToVisibilityConverter}}"
                 Source="Resources/Images/winner.png" Margin="21,-123,16,188"
                 />
-        </Grid>
-        <Grid Margin="462,10,472,491" 
+                </Grid>
+            </Grid>
+            <Grid Margin="462,10,472,491" 
               Visibility="{Binding IsGameOn, Converter={StaticResource BooleanToVisibilityConverter}}"
               >
-            <Image Source="{Binding Players[2].Hand[0].Path}" Margin="28,-4,59,77" Stretch="Fill"
+                <Grid Visibility="{Binding Players[2].IsGaming, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <Image Source="{Binding Players[2].Hand[0].Path}" Margin="28,-4,59,77" Stretch="Fill"
                 
                 />
-            <Image Source="{Binding Players[2].Hand[1].Path}" Margin="70,-4,16,77" Stretch="Fill"
+                    <Image Source="{Binding Players[2].Hand[1].Path}" Margin="70,-4,16,77" Stretch="Fill"
                 
                 />
-            <Image
+                    <Image Source="Resources\Images\b1fv.bmp" Visibility="{Binding Round, Converter={StaticResource RoundConverter}}" Margin="28,-4,59,77" Stretch="Fill"
+                
+                />
+                    <Image Source="Resources\Images\b1fv.bmp" Visibility="{Binding Round, Converter={StaticResource RoundConverter}}" Margin="70,-4,16,77" Stretch="Fill"
+                
+                />
+                    <Image
                 Source="Resources/Images/ppt3.jpg" Margin="-27,88,-43,20" Stretch="Fill"
                 />
-            <Image
+                    <Image
                 Source="{Binding PlayerTurns[2], Converter={StaticResource TurnConverter}}" Margin="156,106,-36,42" Stretch="Fill"
                 />
-            <Label
+                    <Label
                 HorizontalContentAlignment="Center" 
                 Content="{Binding Players[2].Name}" Margin="-7,94,6,32" Background="{x:Null}" Height="58" FontSize="14"
                 />
-            <Separator Margin="29,108,31,48" Opacity="0.8" Background="#FF424242" Foreground="{x:Null}"
+                    <Separator Margin="29,108,31,48" Opacity="0.8" Background="#FF424242" Foreground="{x:Null}"
                 />
-            <Label
+                    <Label
                 HorizontalContentAlignment="Center" FontSize="14"
                 Content="{Binding Players[2].Money, Converter={StaticResource MoneyConverter}}" Margin="-7,115,6,21" Background="{x:Null}"
                 />
-            <Image
+                    <Image
                 Visibility="{Binding PlayerBets[2], Converter={StaticResource BetConverter}}"
                 Source="Resources/Images/poker_PNG3.png" Margin="-27,163,129,-31"
                 />
-            <Label
+                    <Label
                 Visibility="{Binding PlayerBets[2], Converter={StaticResource BetConverter}}"
                 Content="{Binding PlayerBets[2], Converter={StaticResource MoneyConverter}}" Margin="28,174,-36,-31" FontSize="14"
                 />
 
-            <Image
+                    <Image
                 Visibility="{Binding Winner[2], Converter={StaticResource BooleanToVisibilityConverter}}"
                 Source="Resources/Images/winner.png" Margin="167,-18,-131,83"
                 />
-        </Grid>
-        <Grid Margin="892,233,42,268" 
+                </Grid>
+            </Grid>
+            <Grid Margin="892,233,42,268" 
               Visibility="{Binding IsGameOn, Converter={StaticResource BooleanToVisibilityConverter}}"
               >
-            <Image Source="{Binding Players[3].Hand[0].Path}" Margin="28,-4,59,77" Stretch="Fill"
+                <Grid Visibility="{Binding Players[3].IsGaming, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <Image Source="{Binding Players[3].Hand[0].Path}" Margin="28,-4,59,77" Stretch="Fill"
                 
                 />
-            <Image Source="{Binding Players[3].Hand[1].Path}" Margin="70,-4,16,77" Stretch="Fill"
+                    <Image Source="{Binding Players[3].Hand[1].Path}" Margin="70,-4,16,77" Stretch="Fill"
                 
                 />
-            <Image
+                    <Image Source="Resources\Images\b1fv.bmp" Visibility="{Binding Round, Converter={StaticResource RoundConverter}}" Margin="28,-4,59,77" Stretch="Fill"
+                
+                />
+                    <Image Source="Resources\Images\b1fv.bmp" Visibility="{Binding Round, Converter={StaticResource RoundConverter}}" Margin="70,-4,16,77" Stretch="Fill"
+                
+                />
+                    <Image
                 Source="Resources/Images/ppt4.jpg" Margin="-27,88,-43,20" Stretch="Fill"
                 />
-            <Image
+                    <Image
                 Source="{Binding PlayerTurns[3], Converter={StaticResource TurnConverter}}" Margin="156,106,-36,42" Stretch="Fill"
                 />
-            <Label
+                    <Label
                 HorizontalContentAlignment="Center" 
                 Content="{Binding Players[3].Name}" Margin="-7,94,6,32" Background="{x:Null}" Height="58" FontSize="14"
                 />
-            <Separator Margin="29,108,31,48" Opacity="0.8" Background="#FF424242" Foreground="{x:Null}"
+                    <Separator Margin="29,108,31,48" Opacity="0.8" Background="#FF424242" Foreground="{x:Null}"
                 />
-            <Label
+                    <Label
                 HorizontalContentAlignment="Center" FontSize="14"
                 Content="{Binding Players[3].Money, Converter={StaticResource MoneyConverter}}" Margin="-7,115,6,21" Background="{x:Null}"
                 />
-            <Image
+                    <Image
                 Visibility="{Binding PlayerBets[3], Converter={StaticResource BetConverter}}"
                 Source="Resources/Images/poker_PNG3.png" Margin="-43,31,145,101"
                 />
-            <Label
+                    <Label
                 Visibility="{Binding PlayerBets[3], Converter={StaticResource BetConverter}}"
                 Content="{Binding PlayerBets[3], Converter={StaticResource MoneyConverter}}" Margin="-170,42,199,101" FontSize="14"
                 HorizontalAlignment="Right"
                 />
-            <Image
+                    <Image
                 Visibility="{Binding Winner[3], Converter={StaticResource BooleanToVisibilityConverter}}"
                 Source="Resources/Images/winner.png" Margin="21,-128,16,193"
                 />
 
 
-        </Grid>
-        <Grid Margin="432,270,285,307" 
+                </Grid>
+            </Grid>
+            <Grid Margin="432,270,285,307" 
               Visibility="{Binding IsGameOn, Converter={StaticResource BooleanToVisibilityConverter}}"
               >
-            <Image Source="{Binding Cards[0].Path}" Margin="0,-4,303,1" Stretch="Fill"
+                <Image Source="{Binding Cards[0].Path}" Margin="0,-4,303,1" Stretch="Fill"
                 
                 />
-            <Image Source="{Binding Cards[1].Path}" Margin="41,-4,263,1" Stretch="Fill"
+                <Image Source="{Binding Cards[1].Path}" Margin="41,-4,263,1" Stretch="Fill"
                 
                 />
-            <Image Source="{Binding Cards[2].Path}" Margin="83,-4,220,1" Stretch="Fill"
+                <Image Source="{Binding Cards[2].Path}" Margin="83,-4,220,1" Stretch="Fill"
                 
                 />
-            <Image Source="{Binding Cards[3].Path}" Margin="125,-4,179,1" Stretch="Fill"
+                <Image Source="{Binding Cards[3].Path}" Margin="125,-4,179,1" Stretch="Fill"
                 
                 />
-            <Image Source="{Binding Cards[4].Path}" Margin="167,-4,136,1" Stretch="Fill"
+                <Image Source="{Binding Cards[4].Path}" Margin="167,-4,136,1" Stretch="Fill"
                 
                 />
-            <Image 
+                <Image 
                 Visibility="{Binding Bank, Converter={StaticResource BetConverter}}"
                 Source="Resources/Images/poker_PNG2.png" Margin="36,97,255,-53"
                 />
-            <Label
+                <Label
                 Visibility="{Binding Bank, Converter={StaticResource BetConverter}}"
                 Content="{Binding Bank, Converter={StaticResource MoneyConverter}}" Margin="125,112,106,-45" FontSize="14"
                 />
-        </Grid>
+            </Grid>
 
-        <Grid Margin="719,526,17,-32" 
+            <Grid Margin="719,526,17,-32" 
               Visibility="{Binding IsPlayerTurn, Converter={StaticResource BooleanToVisibilityConverter}}"
               >
-            <Button FontSize="20" Margin="27,45,197,102"
+                <Button FontSize="20" Margin="9,23,215,124"
                     Command="{Binding CallCommand}"
                     >
-                Call
-            </Button>
-            <Button FontSize="20" Margin="192,45,32,102"
+                    Call
+                </Button>
+                <Button FontSize="20" Margin="10,72,215,75"
                     Command="{Binding RaiseCommand}"
                     >
-                Raise
-            </Button>
-            <Button FontSize="20" Margin="27,94,197,53"
+                    Raise
+                </Button>
+                <Button FontSize="20" Margin="192,23,33,124"
                     Command="{Binding FoldCommand}"
                     >
-                Fold
-            </Button>
+                    Fold
+                </Button>
+                <TextBox
+                    Height="30"
+                    Width="60"
+                    TextAlignment="Center"
+                    Text="{Binding PlayerBet, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="222,72,63,89"
+                    />
+                <Slider
+                    Width="165"
+                    Maximum="{Binding MaxRaise}"
+                    Minimum="{Binding MinRaise}"
+                    TickFrequency="5"
+                    Value="{Binding PlayerBet, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Margin="170,102,10,61" />
+
+            </Grid>
         </Grid>
     </Grid>
 </Window>
